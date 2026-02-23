@@ -11,7 +11,6 @@ import ListaDocentes from './pages/ListaDocentes'
 import PanelDia from './pages/PanelDia'
 import ReportesAlumno from './pages/ReportesAlumno'
 import ReportesMasivos from './pages/ReportesMasivos'
-import ReportesMasivosDocentes from './pages/ReportesMasivosDocentes'
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }) => {
@@ -21,6 +20,10 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved === 'true'
+  })
 
   useEffect(() => {
     // Verificar autenticación al montar y cuando cambie el localStorage
@@ -34,8 +37,15 @@ function App() {
     // Escuchar cambios en localStorage (útil para múltiples pestañas)
     window.addEventListener('storage', checkAuth)
     
+    // Revisar cambios en el sidebar collapse
+    const interval = setInterval(() => {
+      const saved = localStorage.getItem('sidebarCollapsed')
+      setIsCollapsed(saved === 'true')
+    }, 100)
+    
     return () => {
       window.removeEventListener('storage', checkAuth)
+      clearInterval(interval)
     }
   }, [])
 
@@ -62,7 +72,7 @@ function App() {
         {isAuthenticated && <Navbar onLogout={handleLogout} />}
         
         {/* Contenedor principal con margen para el sidebar si está autenticado */}
-        <div className={isAuthenticated ? 'ml-64' : ''}>
+        <div className={isAuthenticated ? (isCollapsed ? 'ml-16 transition-all duration-300' : 'ml-64 transition-all duration-300') : ''}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
@@ -73,7 +83,6 @@ function App() {
             <Route path="/panel-dia" element={<ProtectedRoute><PanelDia /></ProtectedRoute>} />
             <Route path="/reportes-alumno" element={<ProtectedRoute><ReportesAlumno /></ProtectedRoute>} />
             <Route path="/reportes-masivos" element={<ProtectedRoute><ReportesMasivos /></ProtectedRoute>} />
-            <Route path="/reportes-masivos-docentes" element={<ProtectedRoute><ReportesMasivosDocentes /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
