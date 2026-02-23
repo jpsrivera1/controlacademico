@@ -86,7 +86,7 @@ export default function ListaDocentes() {
               </p>
             </div>
             <button
-              onClick={() => navigate('/docentes/registrar')}
+              onClick={() => navigate('/registrar-docente')}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
             >
               <i className="bi bi-person-plus-fill"></i>
