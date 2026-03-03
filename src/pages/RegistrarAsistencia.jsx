@@ -28,7 +28,12 @@ function RegistrarAsistencia() {
   const procesarAsistencia = async (uid) => {
     setProcesando(true)
     try {
-      const response = await registrarAsistencia(uid)
+      // Normalizar UID antes de enviar
+      const uidNormalizado = uid.trim().toUpperCase().replace(/\s+/g, '');
+      
+      console.log('Procesando asistencia para UID:', uidNormalizado);
+      
+      const response = await registrarAsistencia(uidNormalizado)
       const { tipo, persona, asistencia, tipoPersona, mensaje, detalle } = response.data
 
       // Caso especial: Fin de semana
@@ -76,11 +81,23 @@ function RegistrarAsistencia() {
 
     } catch (error) {
       console.error('Error al registrar asistencia:', error)
+      console.error('Error response:', error.response)
+      console.error('Error data:', error.response?.data)
       
       // Casos específicos que no son errores del sistema
       const status = error.response?.status
       const errorMsg = error.response?.data?.error || error.response?.data?.mensaje || error.response?.data?.message || 'Error desconocido'
       const errorData = error.response?.data
+      
+      // Mostrar detalles adicionales del error 500
+      if (status === 500) {
+        console.error('Error 500 - Detalles:', {
+          mensaje: errorData?.mensaje,
+          detalles: errorData?.detalles,
+          hint: errorData?.hint,
+          code: errorData?.code
+        });
+      }
 
       // Caso especial: tarjeta no registrada (404) - no es un error del sistema
       if (status === 404 && errorMsg.includes('no registrada')) {
