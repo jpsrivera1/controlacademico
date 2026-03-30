@@ -126,8 +126,7 @@ const ReportesMasivos = () => {
             ['Llegadas Tarde', reporteData.resumen.tardes.toString()],
             ['Ausencias', reporteData.resumen.ausencias.toString()],
             ['Total de Días', reporteData.resumen.total_dias.toString()],
-            ['Hora Promedio de Llegada', reporteData.resumen.hora_promedio_llegada || 'N/A'],
-            ['Evaluación', reporteData.resumen.rango_promedio || 'N/A']
+            ['Rango de Hora de Llegada', reporteData.resumen.hora_rango_llegada || reporteData.resumen.hora_promedio_llegada || 'N/A']
         ];
 
         doc.autoTable({

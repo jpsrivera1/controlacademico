@@ -177,8 +177,7 @@ const ReportesAlumno = () => {
             ['Llegadas Tarde', reporte.resumen.tardes.toString()],
             ['Ausencias', reporte.resumen.ausencias.toString()],
             ['Total de Días', reporte.resumen.total_dias.toString()],
-            ['Hora Promedio de Llegada', reporte.resumen.hora_promedio_llegada || 'N/A'],
-            ['Evaluación', reporte.resumen.rango_promedio || 'N/A']
+            ['Rango de Hora de Llegada', reporte.resumen.hora_rango_llegada || reporte.resumen.hora_promedio_llegada || 'N/A']
         ];
 
         doc.autoTable({
@@ -472,25 +471,15 @@ const ReportesAlumno = () => {
                             </div>
                         </div>
 
-                        {/* Información de hora promedio y evaluación */}
-                        {reporte.resumen.hora_promedio_llegada !== 'N/A' && (
-                            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Información de rango de llegada */}
+                        {(reporte.resumen.hora_rango_llegada || reporte.resumen.hora_promedio_llegada) !== 'N/A' && (
+                            <div className="mt-6 grid grid-cols-1 gap-4">
                                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                     <div className="flex items-center gap-3">
                                         <i className="bi bi-clock text-purple-500 text-3xl"></i>
                                         <div>
-                                            <p className="text-purple-600 text-sm font-medium">HORA PROMEDIO DE LLEGADA</p>
-                                            <p className="text-2xl font-bold text-purple-800">{reporte.resumen.hora_promedio_llegada}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                                    <div className="flex items-center gap-3">
-                                        <i className="bi bi-graph-up text-indigo-500 text-3xl"></i>
-                                        <div>
-                                            <p className="text-indigo-600 text-sm font-medium">EVALUACIÓN</p>
-                                            <p className="text-lg font-semibold text-indigo-800">{reporte.resumen.rango_promedio}</p>
+                                            <p className="text-purple-600 text-sm font-medium">RANGO DE HORA DE LLEGADA</p>
+                                            <p className="text-2xl font-bold text-purple-800">{reporte.resumen.hora_rango_llegada || reporte.resumen.hora_promedio_llegada}</p>
                                         </div>
                                     </div>
                                 </div>
