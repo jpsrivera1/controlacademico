@@ -4,11 +4,13 @@ import { obtenerEstudiantes, asignarUID, obtenerUltimoUID, obtenerDocentes, asig
 
 function AsignarUID() {
   const [tipo, setTipo] = useState('estudiante') // 'estudiante' o 'docente'
+  const [modoOperacion, setModoOperacion] = useState('asignar') // 'asignar' o 'editar'
   const [estudiantes, setEstudiantes] = useState([])
   const [docentes, setDocentes] = useState([])
   const [filteredItems, setFilteredItems] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedItem, setSelectedItem] = useState(null)
+  const [uidActual, setUidActual] = useState('')
   const [uid, setUid] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -22,19 +24,32 @@ function AsignarUID() {
     if (searchTerm.length >= 2) {
       const items = tipo === 'estudiante' ? estudiantes : docentes
       const filtered = items.filter(item => {
+        if (modoOperacion === 'editar' && !item.uid_tarjeta) {
+          return false
+        }
+
+        const textoBusqueda = searchTerm.toLowerCase().trim()
+
         if (tipo === 'estudiante') {
-          return `${item.nombre} ${item.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                 item.grado?.toLowerCase().includes(searchTerm.toLowerCase())
+          const nombreCompleto = `${item.nombre} ${item.apellidos}`.toLowerCase()
+          if (modoOperacion === 'editar') {
+            return nombreCompleto.includes(textoBusqueda)
+          }
+          return nombreCompleto.includes(textoBusqueda) ||
+                 item.grado?.toLowerCase().includes(textoBusqueda)
         } else {
-          return item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                 item.jornada?.toLowerCase().includes(searchTerm.toLowerCase())
+          if (modoOperacion === 'editar') {
+            return item.nombre.toLowerCase().includes(textoBusqueda)
+          }
+          return item.nombre.toLowerCase().includes(textoBusqueda) ||
+                 item.jornada?.toLowerCase().includes(textoBusqueda)
         }
       })
       setFilteredItems(filtered)
     } else {
       setFilteredItems([])
     }
-  }, [searchTerm, estudiantes, docentes, tipo])
+  }, [searchTerm, estudiantes, docentes, tipo, modoOperacion])
 
   // Polling para detectar UIDs del lector NFC
   useEffect(() => {
@@ -75,11 +90,16 @@ function AsignarUID() {
 
   const handleSelectItem = (item) => {
     setSelectedItem(item)
+    setUidActual(item.uid_tarjeta || '')
     setUid(item.uid_tarjeta || '')
     setSearchTerm('')
     setFilteredItems([])
     setEscuchandoNFC(true) // Activar escucha automática
-    toast.info('📡 Escuchando lector NFC... Acerca la tarjeta')
+    if (modoOperacion === 'editar') {
+      toast.info('📡 Editando NFC. Acerca la nueva tarjeta al lector')
+    } else {
+      toast.info('📡 Escuchando lector NFC... Acerca la tarjeta')
+    }
   }
 
   const handleAsignarUID = async (e) => {
@@ -114,8 +134,9 @@ function AsignarUID() {
         )
       }
       
-      toast.success('UID asignado correctamente')
+      toast.success(modoOperacion === 'editar' ? 'UID actualizado correctamente' : 'UID asignado correctamente')
       setSelectedItem(null)
+      setUidActual('')
       setUid('')
       setEscuchandoNFC(false)
     } catch (error) {
@@ -159,6 +180,7 @@ function AsignarUID() {
               onClick={() => {
                 setTipo('estudiante')
                 setSelectedItem(null)
+                setUidActual('')
                 setUid('')
                 setSearchTerm('')
                 setEscuchandoNFC(false)
@@ -176,6 +198,7 @@ function AsignarUID() {
               onClick={() => {
                 setTipo('docente')
                 setSelectedItem(null)
+                setUidActual('')
                 setUid('')
                 setSearchTerm('')
                 setEscuchandoNFC(false)
@@ -192,20 +215,79 @@ function AsignarUID() {
           </div>
         </div>
 
+        {/* Selector de Acción */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Acción
+          </label>
+          <div className="flex gap-4">
+            <button
+              onClick={() => {
+                setModoOperacion('asignar')
+                setSelectedItem(null)
+                setUidActual('')
+                setUid('')
+                setSearchTerm('')
+                setFilteredItems([])
+                setEscuchandoNFC(false)
+              }}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                modoOperacion === 'asignar'
+                  ? 'bg-green-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <i className="bi bi-plus-circle mr-2"></i>
+              Asignar NFC
+            </button>
+            <button
+              onClick={() => {
+                setModoOperacion('editar')
+                setSelectedItem(null)
+                setUidActual('')
+                setUid('')
+                setSearchTerm('')
+                setFilteredItems([])
+                setEscuchandoNFC(false)
+              }}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                modoOperacion === 'editar'
+                  ? 'bg-amber-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <i className="bi bi-pencil-square mr-2"></i>
+              Editar NFC por Nombre
+            </button>
+          </div>
+        </div>
+
         {/* Buscador */}
         {!selectedItem && (
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <i className="bi bi-search me-2"></i>
-              Buscar {tipo === 'estudiante' ? 'Estudiante' : 'Docente'}
+              {modoOperacion === 'editar'
+                ? `Buscar ${tipo === 'estudiante' ? 'Alumno' : 'Docente'} por Nombre para Editar`
+                : `Buscar ${tipo === 'estudiante' ? 'Estudiante' : 'Docente'}`}
             </label>
             <input
               type="text"
-              placeholder={tipo === 'estudiante' ? 'Escribe nombre o grado...' : 'Escribe nombre o jornada...'}
+              placeholder={
+                modoOperacion === 'editar'
+                  ? `Escribe el nombre del ${tipo === 'estudiante' ? 'alumno' : 'docente'}...`
+                  : (tipo === 'estudiante' ? 'Escribe nombre o grado...' : 'Escribe nombre o jornada...')
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+            {modoOperacion === 'editar' && (
+              <p className="mt-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                <i className="bi bi-info-circle me-1"></i>
+                Solo se muestran registros que ya tienen UID asignado.
+              </p>
+            )}
             
             {/* Resultados */}
             {filteredItems.length > 0 && (
@@ -268,6 +350,7 @@ function AsignarUID() {
               <button
                 onClick={() => {
                   setSelectedItem(null)
+                  setUidActual('')
                   setUid('')
                   setEscuchandoNFC(false)
                 }}
@@ -278,6 +361,21 @@ function AsignarUID() {
             </div>
 
             <form onSubmit={handleAsignarUID} className="space-y-4">
+              {modoOperacion === 'editar' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <i className="bi bi-credit-card me-2"></i>
+                    UID Actual
+                  </label>
+                  <input
+                    type="text"
+                    value={uidActual || 'SIN UID'}
+                    readOnly
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 font-mono"
+                  />
+                </div>
+              )}
+
               {/* Indicador de escucha NFC */}
               {escuchandoNFC && (
                 <div className="bg-white border-2 border-blue-400 rounded-lg p-4 animate-pulse">
@@ -287,7 +385,11 @@ function AsignarUID() {
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold text-blue-800">📡 Escuchando lector NFC...</p>
-                      <p className="text-sm text-blue-600">Acerca la tarjeta al lector. El UID aparecerá automáticamente.</p>
+                      <p className="text-sm text-blue-600">
+                        {modoOperacion === 'editar'
+                          ? 'Acerca la nueva tarjeta al lector. El UID nuevo aparecerá automáticamente.'
+                          : 'Acerca la tarjeta al lector. El UID aparecerá automáticamente.'}
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -304,7 +406,7 @@ function AsignarUID() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <i className="bi bi-credit-card-2-front me-2"></i>
-                  UID de la Tarjeta NFC
+                  {modoOperacion === 'editar' ? 'Nuevo UID de la Tarjeta NFC' : 'UID de la Tarjeta NFC'}
                 </label>
                 <input
                   type="text"
@@ -315,7 +417,11 @@ function AsignarUID() {
                 />
                 <p className="mt-2 text-sm text-gray-500">
                   <i className="bi bi-info-circle me-1"></i>
-                  {escuchandoNFC ? 'Esperando detección automática del lector NFC...' : 'Pega el UID manualmente o activa la escucha NFC'}
+                  {escuchandoNFC
+                    ? 'Esperando detección automática del lector NFC...'
+                    : (modoOperacion === 'editar'
+                      ? 'Pega el nuevo UID manualmente o activa la escucha NFC'
+                      : 'Pega el UID manualmente o activa la escucha NFC')}
                 </p>
               </div>
 
@@ -333,7 +439,7 @@ function AsignarUID() {
                   ) : (
                     <>
                       <i className="bi bi-check-circle"></i>
-                      Asignar Tarjeta
+                      {modoOperacion === 'editar' ? 'Actualizar Tarjeta' : 'Asignar Tarjeta'}
                     </>
                   )}
                 </button>
@@ -341,6 +447,7 @@ function AsignarUID() {
                   type="button"
                   onClick={() => {
                     setSelectedItem(null)
+                    setUidActual('')
                     setUid('')
                     setEscuchandoNFC(false)
                   }}
